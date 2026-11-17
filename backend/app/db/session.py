@@ -5,7 +5,9 @@ from sqlalchemy.orm import sessionmaker
 # Direct MySQL Connection URL (XAMPP default)
 SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:@localhost:3306/rentiq_db"
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
+# Added pool_pre_ping and pool_recycle to prevent "MySQL server has gone away" errors
+engine = create_engine(SQLALCHEMY_DATABASE_URL, pool_pre_ping=True, pool_recycle=3600)
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
