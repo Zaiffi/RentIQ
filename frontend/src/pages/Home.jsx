@@ -22,6 +22,9 @@ import islamabadImg from "../assets/images/destination/islamabad.jpg";
 import karachiImg from "../assets/images/destination/karachi.jpg";
 import murreeImg from "../assets/images/destination/murree.jpg";
 
+const FALLBACK_PROPERTY_IMAGE =
+  "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=600";
+
 export default function Home() {
   const [selectedCity, setSelectedCity] = useState("");
   const [selectedBeds, setSelectedBeds] = useState("");
@@ -33,6 +36,10 @@ export default function Home() {
 
   const [isCityOpen, setIsCityOpen] = useState(false);
   const [isBedsOpen, setIsBedsOpen] = useState(false);
+
+  // Dynamic Featured Properties from Database
+  const [featuredProperties, setFeaturedProperties] = useState([]);
+  const [loadingFeatured, setLoadingFeatured] = useState(true);
 
   const checkInRef = useRef(null);
   const checkOutRef = useRef(null);
@@ -87,73 +94,111 @@ export default function Home() {
     };
   }, []);
 
-  const featuredProperties = [
-    {
-      id: 1,
-      title: "Modern Luxury Apartment with City View",
-      location: "Gulberg III, Lahore",
-      price: "Rs. 45,000 / month",
-      rating: 4.9,
-      beds: "2 Beds",
-      guests: "4 Guests",
-      wifi: "Free High-Speed Wi-Fi",
-      image:
-        "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=600",
-      aiBadge: "12% Cheaper (Verified)",
-    },
-    {
-      id: 2,
-      title: "Cozy Studio Apartment near Metro",
-      location: "Blue Area, Islamabad",
-      price: "Rs. 35,000 / month",
-      rating: 4.8,
-      beds: "1 Bed",
-      guests: "2 Guests",
-      wifi: "High-Speed Wi-Fi",
-      image:
-        "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=80&w=600",
-      aiBadge: "High Demand Area",
-    },
-    {
-      id: 3,
-      title: "Executive Furnished Villa",
-      location: "DHA Phase 5, Karachi",
-      price: "Rs. 120,000 / month",
-      rating: 5.0,
-      beds: "4 Beds",
-      guests: "8 Guests",
-      wifi: "Fiber Wi-Fi Available",
-      image:
-        "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=600",
-      aiBadge: "Smart Price Match",
-    },
-    {
-      id: 4,
-      title: "Spacious Family Penthouse",
-      location: "F-7 Markaz, Islamabad",
-      price: "Rs. 95,000 / month",
-      rating: 4.7,
-      beds: "3 Beds",
-      guests: "6 Guests",
-      wifi: "Free Wi-Fi",
-      image:
-        "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=600",
-      aiBadge: "Zero Commission",
-    },
-    {
-      id: 5,
-      title: "Modern 2-Bed Portion",
-      location: "DHA Phase 6, Lahore",
-      price: "Rs. 55,000 / month",
-      rating: 4.9,
-      beds: "2 Beds",
-      guests: "4 Guests",
-      wifi: "High-Speed Wi-Fi",
-      image:
-        "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&q=80&w=600",
-      aiBadge: "Verified",
-    },
-  ];
+  // Fetch Featured Properties dynamically from Backend API
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchFeaturedProperties = async () => {
+      try {
+        setLoadingFeatured(true);
+        const response = await fetch(
+          "http://localhost:8000/api/v1/properties/",
+        );
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        const rawList = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.properties)
+            ? data.properties
+            : Array.isArray(data?.items)
+              ? data.items
+              : [];
+
+        const formatted = rawList.slice(0, 5).map((item, idx) => {
+          const rawPhoto =
+            typeof item.photos === "string" && item.photos.trim()
+              ? item.photos
+                  .replace(/["[\]]/g, "")
+                  .split(",")[0]
+                  ?.trim()
+              : typeof item.image === "string" && item.image.trim()
+                ? item.image.trim()
+                : "";
+
+          const resolvedImage = rawPhoto
+            ? rawPhoto.startsWith("http")
+              ? rawPhoto
+              : `http://localhost:8000/${rawPhoto}`
+            : FALLBACK_PROPERTY_IMAGE;
+
+          const amenitiesList = Array.isArray(item.amenities)
+            ? item.amenities
+            : typeof item.amenities === "string" && item.amenities.trim()
+              ? item.amenities.split(",").map((a) => a.trim())
+              : [];
+
+          const wifiLabel =
+            amenitiesList.find(
+              (a) =>
+                a.toLowerCase().includes("wi-fi") ||
+                a.toLowerCase().includes("wifi"),
+            ) || "High-Speed Wi-Fi";
+
+          const rawPrice = Number(item.price_per_night ?? item.price ?? 0);
+          const bedsCount = item.bedrooms ?? 2;
+          const guestsCount = item.max_guests ?? 4;
+          const ratingVal = Number(item.average_rating ?? item.rating ?? 0);
+
+          const cityPart = item.city || "";
+          const addressPart = item.address || item.location || "";
+          const locationText =
+            addressPart &&
+            cityPart &&
+            !addressPart.toLowerCase().includes(cityPart.toLowerCase())
+              ? `${addressPart}, ${cityPart}`
+              : addressPart || cityPart || "Pakistan";
+
+          return {
+            id: item.id ?? idx + 1,
+            title: item.title || "Verified Property",
+            location: locationText,
+            price: `Rs. ${Number.isNaN(rawPrice) ? "0" : rawPrice.toLocaleString()} / month`,
+            rating: ratingVal > 0 ? ratingVal.toFixed(1) : "New",
+            beds: `${bedsCount} ${Number(bedsCount) === 1 ? "Bed" : "Beds"}`,
+            guests: `${guestsCount} ${Number(guestsCount) === 1 ? "Guest" : "Guests"}`,
+            wifi: wifiLabel,
+            image: resolvedImage,
+            aiBadge:
+              item.ai_badge ||
+              item.badge ||
+              (item.property_type
+                ? `${item.property_type} • Zero Commission`
+                : "Zero Commission"),
+          };
+        });
+
+        if (isMounted) {
+          setFeaturedProperties(formatted);
+        }
+      } catch (error) {
+        console.error("Error fetching featured properties:", error);
+        if (isMounted) {
+          setFeaturedProperties([]);
+        }
+      } finally {
+        if (isMounted) {
+          setLoadingFeatured(false);
+        }
+      }
+    };
+
+    fetchFeaturedProperties();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const destinations = [
     { city: "Lahore", properties: "1,240+ Properties", image: lahoreImg },
@@ -479,7 +524,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Featured Properties Section */}
+        {/* Featured Properties Section (Dynamic from Database) */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-gray-900">
@@ -497,69 +542,98 @@ export default function Home() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {featuredProperties.map((property) => (
-              <div
-                key={property.id}
-                className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition border border-gray-100 group flex flex-col justify-between"
-              >
-                <div>
-                  <div className="relative overflow-hidden aspect-video">
-                    <img
-                      src={property.image}
-                      alt={property.title}
-                      className="object-cover w-full h-full group-hover:scale-105 transition duration-300"
-                    />
-                    <span className="absolute top-2 left-2 bg-white/90 backdrop-blur-md text-coral-600 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full shadow">
-                      {property.aiBadge}
-                    </span>
+          {loadingFeatured ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-white rounded-2xl overflow-hidden shadow-md border border-gray-100 animate-pulse"
+                >
+                  <div className="aspect-video bg-gray-200" />
+                  <div className="p-3.5 space-y-2.5">
+                    <div className="h-3 bg-gray-200 rounded w-2/3" />
+                    <div className="h-4 bg-gray-200 rounded w-full" />
+                    <div className="h-3 bg-gray-100 rounded w-1/2" />
+                    <div className="h-3 bg-gray-100 rounded w-3/4" />
                   </div>
-                  <div className="p-3.5">
-                    <div className="flex justify-between items-center mb-1.5">
-                      <span className="text-[11px] text-gray-500 flex items-center gap-1 truncate">
-                        <MapPin size={12} /> {property.location}
-                      </span>
-                      <span className="text-[11px] font-bold bg-yellow-50 text-yellow-700 px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                        <Star size={10} fill="currentColor" /> {property.rating}
+                </div>
+              ))}
+            </div>
+          ) : featuredProperties.length === 0 ? (
+            <div className="bg-white rounded-2xl p-8 text-center border border-gray-100 shadow-sm">
+              <p className="text-sm font-bold text-gray-700">
+                No featured properties available right now.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {featuredProperties.map((property) => (
+                <div
+                  key={property.id}
+                  className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition border border-gray-100 group flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="relative overflow-hidden aspect-video">
+                      <img
+                        src={property.image}
+                        alt={property.title}
+                        onError={(e) => {
+                          e.currentTarget.src = FALLBACK_PROPERTY_IMAGE;
+                        }}
+                        className="object-cover w-full h-full group-hover:scale-105 transition duration-300"
+                      />
+                      <span className="absolute top-2 left-2 bg-white/90 backdrop-blur-md text-coral-600 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full shadow">
+                        {property.aiBadge}
                       </span>
                     </div>
-                    <h3 className="font-bold text-gray-900 text-sm truncate mb-1.5">
-                      {property.title}
-                    </h3>
+                    <div className="p-3.5">
+                      <div className="flex justify-between items-center mb-1.5">
+                        <span className="text-[11px] text-gray-500 flex items-center gap-1 truncate">
+                          <MapPin size={12} /> {property.location}
+                        </span>
+                        <span className="text-[11px] font-bold bg-yellow-50 text-yellow-700 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                          <Star size={10} fill="currentColor" />{" "}
+                          {property.rating}
+                        </span>
+                      </div>
+                      <h3 className="font-bold text-gray-900 text-sm truncate mb-1.5">
+                        {property.title}
+                      </h3>
 
-                    <ul className="list-disc list-inside text-[11px] text-gray-500 font-medium space-y-1 mb-2">
-                      <li className="flex items-center gap-1.5">
-                        <span className="w-1 h-1 bg-gray-400 rounded-full inline-block"></span>
-                        <Bed size={12} className="text-gray-400 shrink-0" />
-                        <span>{property.beds}</span>
-                      </li>
-                      <li className="flex items-center gap-1.5">
-                        <span className="w-1 h-1 bg-gray-400 rounded-full inline-block"></span>
-                        <Users size={12} className="text-gray-400 shrink-0" />
-                        <span>{property.guests}</span>
-                      </li>
-                      <li className="flex items-center gap-1.5">
-                        <span className="w-1 h-1 bg-gray-400 rounded-full inline-block"></span>
-                        <Wifi size={12} className="text-gray-400 shrink-0" />
-                        <span>{property.wifi}</span>
-                      </li>
-                    </ul>
+                      <ul className="list-disc list-inside text-[11px] text-gray-500 font-medium space-y-1 mb-2">
+                        <li className="flex items-center gap-1.5">
+                          <span className="w-1 h-1 bg-gray-400 rounded-full inline-block"></span>
+                          <Bed size={12} className="text-gray-400 shrink-0" />
+                          <span>{property.beds}</span>
+                        </li>
+                        <li className="flex items-center gap-1.5">
+                          <span className="w-1 h-1 bg-gray-400 rounded-full inline-block"></span>
+                          <Users size={12} className="text-gray-400 shrink-0" />
+                          <span>{property.guests}</span>
+                        </li>
+                        <li className="flex items-center gap-1.5">
+                          <span className="w-1 h-1 bg-gray-400 rounded-full inline-block"></span>
+                          <Wifi size={12} className="text-gray-400 shrink-0" />
+                          <span>{property.wifi}</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div className="p-3.5 pt-0 flex justify-between items-center">
+                    <span className="text-coral-600 font-extrabold text-xs">
+                      {property.price}
+                    </span>
+                    <Link
+                      to={`/property/${property.id}`}
+                      className="bg-coral-500 hover:bg-coral-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl transition"
+                    >
+                      Details
+                    </Link>
                   </div>
                 </div>
-                <div className="p-3.5 pt-0 flex justify-between items-center">
-                  <span className="text-coral-600 font-extrabold text-xs">
-                    {property.price}
-                  </span>
-                  <Link
-                    to={`/property/${property.id}`}
-                    className="bg-gray-900 hover:bg-coral-500 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl transition"
-                  >
-                    Details
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Promotional Video Banner Section */}

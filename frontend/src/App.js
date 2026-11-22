@@ -5,11 +5,15 @@ import Home from "./pages/Home";
 import HowItWorks from "./pages/HowItWorks";
 import FAQ from "./pages/FAQ";
 import Blog from "./pages/Blog";
+import AccountSettings from "./pages/AccountSettings";
+import BookingHistoryTracking from "./pages/BookingHistoryTracking";
 import BlogDetail from "./pages/BlogDetail";
 import Explore from "./pages/Explore";
 import PropertyDetail from "./pages/PropertyDetail";
+import Favorites from "./pages/Favorites";
 import Checkout from "./pages/Checkout";
 import Auth from "./pages/Auth";
+
 import HostDashboard from "./pages/host/HostDashboard";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 
@@ -26,13 +30,16 @@ function App() {
         <Route path="/how-it-works" element={<HowItWorks />} />
         <Route path="/faq" element={<FAQ />} />
         <Route path="/blog" element={<Blog />} />
+        <Route path="/account-settings" element={<AccountSettings />} />
+        <Route path="/history-tracking" element={<BookingHistoryTracking />} />
+        <Route path="/favorites" element={<Favorites />} />
         <Route path="/blog/:id" element={<BlogDetail />} />
         <Route path="/property/:id" element={<PropertyDetail />} />
         <Route path="/checkout" element={<Checkout />} />
 
         {/* --- Host Dashboard Route (SPA Setup) --- */}
         <Route path="/host/dashboard" element={<HostDashboard />} />
-
+        
         {/* --- Admin Dashboard Route (SPA Setup) --- */}
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
       </Routes>

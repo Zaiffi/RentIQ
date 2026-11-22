@@ -1,0 +1,35 @@
+50% Project Requirement's
+Functional Requirements
+1. User Registration & Authentication
+2. Property Management
+3. Property Search, Filtering & Details
+4. Reviews & Dynamic Ratings
+5. Booking Management
+
+Non-Functional Requirements
+1. Usability & UI/UX Consistency
+2. Performance & Responsiveness
+3. Security & Authorization
+4. Reliability & Data Integrity
+5. Maintainability & Scalability
+
+
+Complete Project Requirement's
+Functional Requirements
+1. User Registration & Authentication
+2. Property Management
+3. Property Search, Filtering & Details
+4. Reviews & Dynamic Ratings
+5. Booking Management
+6. Personalized Property Matching
+7. Rental Price Recommendation
+8. Booking-Demand Forecasting
+9. Dashboards & Analytics
+
+Non-Functional Requirements
+1. Usability & UI/UX Consistency
+2. Performance & Scalability
+3. Security, Privacy & Authorization
+4. Reliability & Data Integrity & Error Handling
+5. Maintainability
+6. Decision Transparency & Human-in-the-Loop Control

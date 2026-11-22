@@ -164,7 +164,7 @@ export default function Navbar() {
 
                     <div className="space-y-0.5">
                       <Link
-                        to="/explore"
+                        to="/favorites"
                         onClick={() => setDropdownOpen(false)}
                         className="flex items-center gap-2.5 px-3 py-2 text-[11px] font-semibold text-gray-700 hover:bg-coral-50 hover:text-coral-600 rounded-xl transition"
                       >
@@ -173,7 +173,7 @@ export default function Navbar() {
                       </Link>
 
                       <Link
-                        to="/explore"
+                        to="/history-tracking"
                         onClick={() => setDropdownOpen(false)}
                         className="flex items-center gap-2.5 px-3 py-2 text-[11px] font-semibold text-gray-700 hover:bg-coral-50 hover:text-coral-600 rounded-xl transition"
                       >
@@ -182,7 +182,7 @@ export default function Navbar() {
                       </Link>
 
                       <Link
-                        to="/explore"
+                        to="/account-settings"
                         onClick={() => setDropdownOpen(false)}
                         className="flex items-center gap-2.5 px-3 py-2 text-[11px] font-semibold text-gray-700 hover:bg-coral-50 hover:text-coral-600 rounded-xl transition"
                       >
